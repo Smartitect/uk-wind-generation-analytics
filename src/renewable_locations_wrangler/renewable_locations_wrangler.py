@@ -121,7 +121,7 @@ class RenewableLocationsWrangler:
         df = df.with_columns([pl.col("installed_capacity_mw").fill_null(0)])
         return df
     
-    def plot_locations(self, df):
+    def plot_locations(self, df, color_column="technology_type"):
     
         # Calculate the mean latitude and longitude for centering the map
         center_lat = df.select(pl.col("latitude").mean()).item()
@@ -132,7 +132,7 @@ class RenewableLocationsWrangler:
             df,
             lat="latitude",
             lon="longitude",
-            color="technology_type",
+            color=color_column,
             hover_name="site_name",
             mapbox_style="carto-positron",
             zoom=4,
