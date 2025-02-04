@@ -8,6 +8,7 @@ readme = "README.md"
 packages = [
     { include = "renewable_locations_wrangler", from = "src" },
     { include = "historic_generation_wrangler", from = "src" },
+    { include = "weather_wrangler", from = "src" }
 ]
 
 [tool.poetry.dependencies]
@@ -24,6 +25,8 @@ black = "^24.10.0"
 frictionless = "^5.18.0"
 nbformat = "^5.10.4"
 pyproj = "^3.7.0"
+meteomatics = "^2.11.4"
+arrow = "^1.3.0"
 
 [build-system]
 requires = ["poetry-core"]
