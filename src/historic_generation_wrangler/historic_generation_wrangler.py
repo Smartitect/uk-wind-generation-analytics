@@ -1,5 +1,5 @@
 import requests
-from datetime import datetime, timedelta, timezone
+import arrow
 
 import plotly.express as px
 import plotly.graph_objects as go
@@ -42,9 +42,14 @@ class HistoricGenerationWrangler:
         else:
             self.elexon_url = url
     
-    def get_generation_data(self, number_of_days=7):
+    def get_generation_data(self, start_date, end_date):
+        
+        # Check start_date and end_date are valid arrow dates
+        if not isinstance(start_date, arrow.Arrow) or not isinstance(end_date, arrow.Arrow):
+            raise ValueError("start_date and end_date must be arrow.Arrow objects")
+        
         return (
-            self.download_data(number_of_days) \
+            self.download_data(start_date, end_date) \
             .pipe(self.join_fuel_type, self.fuel_type_mapping) \
             .pipe(self.calculate_percentage_of_total_generation) \
             .pipe(self.convert_settlement_date_to_date) \
@@ -52,9 +57,10 @@ class HistoricGenerationWrangler:
             .pipe(self.exclude_pump_storage)
         )
     
-    def download_data(self, number_of_days):
-        publish_date_time_from = (datetime.now(timezone.utc) - timedelta(days=number_of_days)).strftime('%Y-%m-%dT%H:%M:%SZ')
-        publish_date_time_to = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    def download_data(self, start_date, end_date):
+        # Assuming start_date and end_date are arrow objects
+        publish_date_time_from = start_date.format('YYYY-MM-DDTHH:mm:ss') + 'Z'
+        publish_date_time_to = end_date.format('YYYY-MM-DDTHH:mm:ss') + 'Z'
         request_url = f'{self.elexon_url}?publishDateTimeFrom={publish_date_time_from}&publishDateTimeTo={publish_date_time_to}'
         logging.info(f"Downloading data from {request_url}")
         response = requests.get(request_url)

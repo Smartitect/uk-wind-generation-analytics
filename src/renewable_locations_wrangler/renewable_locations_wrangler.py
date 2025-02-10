@@ -6,6 +6,9 @@ import plotly.express as px
 import polars as pl
 from datetime import datetime, timedelta
 
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+
 import logging
 # Set logging level to info
 logging.basicConfig(level=logging.INFO)
@@ -32,7 +35,8 @@ class RenewableLocationsWrangler:
             .pipe(self.convert_coordinates) \
             .pipe(self.drop_nulls_in_coordinates) \
             .pipe(self.drop_nulls_in_date_operational) \
-            .pipe(self.fill_na_in_installed_capacity_mw)
+            .pipe(self.fill_na_in_installed_capacity_mw) \
+            .pipe(self.add_cluster_labels)
         )
             
     def download_data(self):
@@ -120,6 +124,39 @@ class RenewableLocationsWrangler:
     def fill_na_in_installed_capacity_mw(self, df: pl.DataFrame):
         df = df.with_columns([pl.col("installed_capacity_mw").fill_null(0)])
         return df
+    
+    def add_cluster_labels(self, df, number_of_clusters=80):
+        
+        df = df.with_columns([pl.col("technology_type")
+            .cast(pl.Categorical)
+            .to_physical()
+            .alias("technology_type_int")])
+        
+        coords = df[['latitude', 'longitude', 'technology_type_int']]
+        
+        # Scale latitude and longitude using Sclearn standard scalar
+        scaler = StandardScaler()
+        coords[['latitude', 'longitude']] = scaler.fit_transform(coords[['latitude', 'longitude']])
+        
+        kmeans_model = KMeans(n_clusters=number_of_clusters, random_state=0)
+
+        clusters = kmeans_model.fit_predict(coords)
+
+        df = df.with_columns(pl.Series(name="cluster", values=clusters))
+        
+        return df
+    
+    def get_cluster_centers(self, df):
+        
+        cluster_centers = df.group_by('cluster').agg(
+            [
+                pl.mean('latitude').alias('latitude'),
+                pl.mean('longitude').alias('longitude'),
+                pl.count('cluster').alias('count'),
+            ]
+        )
+        
+        return cluster_centers
     
     def plot_locations(self, df, color_column="technology_type"):
     
