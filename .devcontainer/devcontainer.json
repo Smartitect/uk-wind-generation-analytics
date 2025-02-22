@@ -11,7 +11,8 @@
 		"vscode": {
 			"extensions": [
 				"ms-toolsai.jupyter",
-				"rangav.vscode-thunder-client"
+				"rangav.vscode-thunder-client",
+				"ms-azuretools.vscode-bicep"
 			]
 		}
 	},

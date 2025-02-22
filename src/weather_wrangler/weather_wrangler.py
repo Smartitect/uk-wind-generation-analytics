@@ -3,6 +3,9 @@ import pandas as pd
 import arrow
 import requests
 
+import yaml
+from pathlib import Path
+
 
 class WeatherWrangler:
     
@@ -25,10 +28,20 @@ class WeatherWrangler:
             "windDirection",
         ]
     
+    CONFIG_FILE = "config.yaml"
+    
     def __init__(self):
 
+        # Check config file exists
+        if not Path(self.CONFIG_FILE).is_file():
+            raise FileNotFoundError("Config file not found. Please create a config file with the api_key")
+        
+        # Store api_key in a local config.yaml file and load it from their during initialization
+        with open(self.CONFIG_FILE, "r") as file:
+            self.config = yaml.safe_load(file)
+        
         self.api_key = (
-            r"f0ad46d0-e431-11ec-a296-0242ac130002-f0ad473e-e431-11ec-a296-0242ac130002"
+            self.config["stormglass_weather"]["api_key"]
         )
 
     def get_historical_weather_data(self, latitude, longitude, start_date, end_date):
